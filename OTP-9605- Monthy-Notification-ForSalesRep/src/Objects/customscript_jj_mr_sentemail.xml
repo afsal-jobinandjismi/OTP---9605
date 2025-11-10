@@ -1,7 +1,7 @@
-<mapreducescript scriptid="customscriptjj_sentemail">
+<mapreducescript scriptid="customscript_jj_mr_sentemail">
   <description></description>
   <isinactive>F</isinactive>
-  <name>JJ SentEmail</name>
+  <name>JJ MR sent email</name>
   <notifyadmins>F</notifyadmins>
   <notifyemails></notifyemails>
   <notifyowner>T</notifyowner>
@@ -10,12 +10,12 @@
     <scriptdeployment scriptid="customdeployjj_sentemail">
       <buffersize>1</buffersize>
       <concurrencylimit>1</concurrencylimit>
-      <isdeployed>F</isdeployed>
+      <isdeployed>T</isdeployed>
       <loglevel>DEBUG</loglevel>
       <queueallstagesatonce>T</queueallstagesatonce>
       <runasrole>ADMINISTRATOR</runasrole>
       <status>NOTSCHEDULED</status>
-      <title>JJ SentEmail</title>
+      <title>JJ MR sent email</title>
       <yieldaftermins>60</yieldaftermins>
       <recurrence>
         <single>
