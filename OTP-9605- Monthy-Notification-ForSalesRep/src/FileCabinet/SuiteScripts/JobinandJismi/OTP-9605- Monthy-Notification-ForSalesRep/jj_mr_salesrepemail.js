@@ -2,6 +2,27 @@
  * @NApiVersion 2.1
  * @NScriptType MapReduceScript
  */
+
+/************************************************************************************************ 
+ *  
+ * OTP-9605 : Monthly Sales Notification for Sales Rep
+ * 
+************************************************************************************************* 
+ * 
+ * Author: Jobin and Jismi IT Services 
+ * 
+ * Date Created : 21-October-2025 
+ * 
+ * Description : This script generates monthly sales reports for sales representatives based on sales orders from the previous month.
+ *              It compiles customer sales data into CSV files and emails them to the respective sales reps. 
+ *             If a sales rep is not assigned, the report is sent to an admin email and a message to add a sales rep.
+ * 
+ * 
+ * REVISION HISTORY
+ *
+ * @version 1.0 : 21-October-2025 :  The initial build was created by JJ0414
+ * 
+*************************************************************************************************/
 define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
     /**
      * @param{email} email
@@ -10,13 +31,35 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
      * @param{runtime} runtime
      * @param{search} search
      * @param{log} log
+     * 
+     * In get Input Data:
+     * - Search for sales orders from the previous month.
+     * 
+     * In Map:
+     * - Extract relevant fields and group by sales rep.
+     * 
+     * In Reduce:
+     * - Compile data into CSV files.
+     * - Email files to sales reps or admin if no rep is assigned.
+     * - Log messages and attach files to employee records.
+     * 
+     * In Summarize:
+     * - Log usage statistics and errors.
+     * 
      */
     (email, file, record, runtime, search, log) => {
 
-        const ADMIN_EMAIL = 'ss2extend09225pj@oracle.com';
-        const getInputData = () => {
+        let ADMIN_EMAIL = 'ss2extend09225pj@oracle.com';
+        let getInputData = () => {
             return userGetInput();
         }
+
+/**
+ * Retrieves sales orders from the previous month for processing.
+ *
+ * @returns {Search} A NetSuite search object containing sales orders.
+ * @throws {Error} Logs and returns null if search creation fails.
+ */
 
         function userGetInput() {
             try {
@@ -42,21 +85,30 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
             }
     };
 
-        const map = (mapContext) => {
+        let map = (mapContext) => {
             return userMap(mapContext);
         }
 
+/**
+ * Processes each sales order record in the Map stage.
+ *
+ * @param {Object} mapContext - The context object provided by NetSuite.
+ * @param {string} mapContext.key - Key for grouping (sales rep ID or 'admin').
+ * @param {string} mapContext.value - JSON string of sales order data.
+ * @throws {Error} Logs error if parsing or writing fails.
+ */
+
         function userMap(mapContext) {
             try {
-                const result = JSON.parse(mapContext.value);
-                const salesRepId = result.values.salesrep?.value || null;
-                const customerName = result.values.entity?.text || 'Unknown';
-                const customerEmail = result.values['email.customerMain'] || 'Undefined';
-                const orderId = result.values.tranid;
-                const amount = result.values.amount;
+                let result = JSON.parse(mapContext.value);
+                let salesRepId = result.values.salesrep?.value || null;
+                let customerName = result.values.entity?.text || 'Unknown';
+                let customerEmail = result.values['email.customerMain'] || 'Undefined';
+                let orderId = result.values.tranid;
+                let amount = result.values.amount;
 
-                const key = salesRepId || 'admin';
-                const value = {
+                let key = salesRepId || 'admin';
+                let value = {
                     customerName,
                     customerEmail,
                     orderId,
@@ -72,28 +124,36 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
             }
     };
 
-        const reduce = (reduceContext) => {
+        let reduce = (reduceContext) => {
             return userReduce(reduceContext);
         }
+// **
+//  * Compiles grouped sales data into CSV and sends email notifications.
+//  *
+//  * @param {Object} reduceContext - The context object provided by NetSuite.
+//  * @param {string} reduceContext.key - Sales rep ID or 'admin'.
+//  * @param {string[]} reduceContext.values - Array of JSON strings with sales data.
+//  * @throws {Error} Logs error if CSV creation or email sending fails.
+//  */
 
         function userReduce(reduceContext) {
             try {
-                const salesData = reduceContext.values.map(JSON.parse);
-                const csvLines = ['Customer,Email,Sales Order #,Sales Amount'];
+                let salesData = reduceContext.values.map(JSON.parse);
+                let csvLines = ['Customer,Email,Sales Order #,Sales Amount'];
 
                 salesData.forEach(data => {
                     csvLines.push(`${data.customerName},${data.customerEmail},${data.orderId},${data.amount}`);
                 });
 
-                const csvContent = csvLines.join('\n');
-                const csvFile = file.create({
+                let csvContent = csvLines.join('\n');
+                let csvFile = file.create({
                     name: `sales_data_${reduceContext.key}.csv`,
                     fileType: file.Type.CSV,
                     contents: csvContent,
                     folder: 299
                 });
 
-                const fileId = csvFile.save();
+                let fileId = csvFile.save();
 
                 let recipientEmail;
                 if (reduceContext.key === 'admin') {
@@ -107,15 +167,15 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
                     return;
                 }
 
-                const subject = 'Monthly Sales Report';
-                const body = reduceContext.key === 'admin'
+                let subject = 'Monthly Sales Report';
+                let body = reduceContext.key === 'admin'
                     ? 'Please assign sales representatives to the following customers. See attached report.'
                     : 'Please find your monthly customer sales report attached.';
 
 
-                const authorId = -5;
-                const recipientId = reduceContext.key !== 'admin' ? parseInt(reduceContext.key) : null;
-                const recipientEmails = recipientId ? getSalesRepEmail(recipientId) : ADMIN_EMAIL;
+                let authorId = -5;
+                let recipientId = reduceContext.key !== 'admin' ? parseInt(reduceContext.key) : null;
+                let recipientEmails = recipientId ? getSalesRepEmail(recipientId) : ADMIN_EMAIL;
 
                 if (!recipientEmails) {
                     log.error('No valid email found for key: ' + reduceContext.key);
@@ -130,7 +190,7 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
                     attachments: [file.load({ id: fileId })]
                 });
 
-                const messageRecord = record.create({
+                let messageRecord = record.create({
                     type: record.Type.MESSAGE,
                     isDynamic: true
                 });
@@ -175,9 +235,17 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
             }
     };
 
-        const getSalesRepEmail = (salesRepId) => {
+/**
+ * Retrieves the email address of a sales representative.
+ *
+ * @param {number} salesRepId - Internal ID of the sales rep (employee record).
+ * @returns {string|null} The email address of the sales rep, or null if not found.
+ * @throws {Error} Logs error if record load fails.
+ */
+
+        let getSalesRepEmail = (salesRepId) => {
             try {
-                const repRecord = record.load({
+                let repRecord = record.load({
                     type: record.Type.EMPLOYEE,
                     id: salesRepId
                 });
@@ -188,9 +256,18 @@ define(['N/email', 'N/file', 'N/record', 'N/runtime', 'N/search', 'N/log'],
             }
         };
 
-        const summarize = (summaryContext) => {
+
+        let summarize = (summaryContext) => {
             return userSummarize(summaryContext);
         }
+/**
+ * Summarizes the Map/Reduce execution, logging usage and errors.
+ *
+ * @param {Object} summaryContext - The context object provided by NetSuite.
+ * @param {number} summaryContext.usage - Governance units consumed.
+ * @param {number} summaryContext.seconds - Execution time in seconds.
+ * @throws {Error} Logs error if summary processing fails.
+ */
 
         function userSummarize(summaryContext) {
             try {
