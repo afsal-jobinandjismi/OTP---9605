@@ -5,9 +5,9 @@
   <notifyadmins>F</notifyadmins>
   <notifyemails></notifyemails>
   <notifyowner>T</notifyowner>
-  <scriptfile>[/SuiteScripts/JobinandJismi/OTP-9605/jj_cs_maptask.js]</scriptfile>
+  <scriptfile>[/SuiteScripts/JobinandJismi/OTP-9605- Monthy-Notification-ForSalesRep/jj_mr_salesrepemail.js]</scriptfile>
   <scriptdeployments>
-    <scriptdeployment scriptid="customdeployjj_sentemail">
+    <scriptdeployment scriptid="customdeploy_jj_mr_sentemail">
       <buffersize>1</buffersize>
       <concurrencylimit>1</concurrencylimit>
       <isdeployed>T</isdeployed>
@@ -20,8 +20,8 @@
       <recurrence>
         <single>
           <repeat></repeat>
-          <startdate>2025-10-22</startdate>
-          <starttime>01:00:00Z</starttime>
+          <startdate>2025-11-11</startdate>
+          <starttime>02:00:00Z</starttime>
         </single>
       </recurrence>
     </scriptdeployment>
